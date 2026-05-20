@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gerenciar Usuários — Controle de Presença</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
+<style>
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --surface2: #f0ede8;
+    --border: rgba(0,0,0,0.09);
+    --border2: rgba(0,0,0,0.16);
+    --text: #1a1a18;
+    --text2: #5a5955;
+    --text3: #9a9890;
+    --green: #3B6D11;
+    --green-bg: #EAF3DE;
+    --red: #A32D2D;
+    --red-bg: #FCEBEB;
+    --amber: #BA7517;
+    --amber-bg: #FAEEDA;
+    --blue: #185FA5;
+    --blue-bg: #E6F1FB;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1917;
+      --surface: #242320;
+      --surface2: #2e2d29;
+      --border: rgba(255,255,255,0.07);
+      --border2: rgba(255,255,255,0.14);
+      --text: #f0ede8;
+      --text2: #9a9890;
+      --text3: #5a5955;
+      --green: #97C459;
+      --green-bg: #173404;
+      --red: #F09595;
+      --red-bg: #501313;
+      --amber: #EF9F27;
+      --amber-bg: #412402;
+      --blue: #85B7EB;
+      --blue-bg: #042C53;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .topbar-brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 15px; font-weight: 600; color: var(--text);
+  }
+  .topbar-brand i { font-size: 20px; color: var(--green); }
+
+  button {
+    font-family: inherit; font-size: 13px; cursor: pointer;
+    border: 1px solid var(--border2); background: transparent;
+    color: var(--text); padding: 6px 13px; border-radius: var(--radius-sm);
+    display: inline-flex; align-items: center; gap: 6px;
+    transition: background 0.12s; white-space: nowrap;
+  }
+  button:hover { background: var(--surface2); }
+  button.primary { background: var(--text); color: var(--bg); border-color: transparent; }
+  button.primary:hover { opacity: 0.85; }
+  button.danger { color: var(--red); border-color: var(--red-bg); }
+  button.danger:hover { background: var(--red-bg); }
+
+  .main { max-width: 700px; margin: 0 auto; padding: 2rem 1.5rem; }
+  h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: var(--text3); margin-bottom: 2rem; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 1.5rem;
+  }
+  .card h2 { font-size: 15px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .card h2 i { font-size: 18px; color: var(--green); }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 500px) { .form-grid { grid-template-columns: 1fr; } }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group label { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.05em; }
+  .form-group input, .form-group select {
+    font-family: inherit; font-size: 14px;
+    padding: 8px 12px; border: 1px solid var(--border2);
+    border-radius: var(--radius-sm); background: var(--surface);
+    color: var(--text); outline: none; transition: border-color 0.15s;
+  }
+  .form-group input:focus, .form-group select:focus { border-color: var(--blue); }
+  .form-full { grid-column: 1 / -1; }
+  .form-actions { display: flex; justify-content: flex-end; margin-top: 4px; }
+
+  /* User list */
+  .user-list { display: flex; flex-direction: column; gap: 8px; }
+  .user-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px; background: var(--surface2);
+    border-radius: var(--radius-sm); border: 1px solid var(--border);
+  }
+  .user-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: white; flex-shrink: 0;
+  }
+  .user-info { flex: 1; }
+  .user-name { font-size: 14px; font-weight: 600; }
+  .user-email { font-size: 12px; color: var(--text3); }
+  .user-role {
+    font-size: 11px; font-weight: 600; padding: 2px 8px;
+    border-radius: 8px; margin-left: 6px; vertical-align: middle;
+  }
+  .role-admin { background: var(--amber-bg); color: var(--amber); }
+  .role-member { background: var(--blue-bg); color: var(--blue); }
+  .user-actions { display: flex; gap: 6px; }
+
+  /* Badges de senha alterada */
+  .hint { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+  .empty-users { text-align: center; padding: 2rem; color: var(--text3); font-size: 13px; }
+  .empty-users i { font-size: 32px; display: block; margin-bottom: 8px; }
+
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--text); color: var(--bg);
+    padding: 10px 18px; border-radius: var(--radius-sm);
+    font-size: 13px; z-index: 999;
+    opacity: 0; transform: translateY(8px);
+    transition: all 0.2s; display: flex; align-items: center; gap: 8px;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.toast-success { background: var(--green); color: white; }
+  .toast.toast-error { background: var(--red); color: white; }
+
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    z-index: 200; display: flex; align-items: center; justify-content: center;
+    padding: 1rem; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--surface); border-radius: var(--radius);
+    padding: 24px; max-width: 400px; width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    transform: translateY(16px); transition: transform 0.2s;
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+  .modal p { font-size: 13px; color: var(--text2); margin-bottom: 16px; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+  .info-box {
+    background: var(--blue-bg); border: 1px solid var(--blue);
+    border-radius: var(--radius-sm); padding: 12px 16px;
+    font-size: 13px; color: var(--blue); display: flex;
+    align-items: flex-start; gap: 8px; margin-bottom: 1.5rem;
+  }
+  .info-box i { flex-shrink: 0; font-size: 16px; margin-top: 1px; }
+
+  .back-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; color: var(--text3); text-decoration: none;
+    padding: 4px 8px; border-radius: var(--radius-sm);
+    transition: background 0.12s; margin-bottom: 1.5rem;
+  }
+  .back-link:hover { background: var(--surface2); color: var(--text); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar-brand">
+    <i class="ti ti-users-group"></i>
+    Gerenciar Usuários
+  </span>
+  <a href="presencas.html" style="text-decoration:none">
+    <button><i class="ti ti-arrow-left"></i> Voltar ao sistema</button>
+  </a>
+</div>
+
+<div class="main">
+  <div class="info-box">
+    <i class="ti ti-info-circle"></i>
+    <div>
+      Os usuários cadastrados aqui poderão acessar o <strong>Controle de Presença</strong> com e-mail e senha.
+      Os comentários/feedbacks de cada um ficam identificados pelo nome do usuário.
+      <strong>Admin</strong> pode gerenciar usuários; <strong>Membro</strong> só acessa o sistema.
+    </div>
+  </div>
+
+  <!-- Cadastrar novo usuário -->
+  <div class="card">
+    <h2><i class="ti ti-user-plus"></i> Cadastrar novo usuário</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Nome completo</label>
+        <input type="text" id="u-nome" placeholder="Ex: Vinicius Silva" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>E-mail</label>
+        <input type="email" id="u-email" placeholder="email@exemplo.com" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>Senha</label>
+        <input type="password" id="u-senha" placeholder="Mínimo 4 caracteres">
+      </div>
+      <div class="form-group">
+        <label>Confirmar senha</label>
+        <input type="password" id="u-senha2" placeholder="Repita a senha">
+      </div>
+      <div class="form-group">
+        <label>Perfil</label>
+        <select id="u-perfil">
+          <option value="membro">Membro — só acessa o sistema</option>
+          <option value="admin">Admin — pode gerenciar usuários</option>
+        </select>
+      </div>
+      <div class="form-group form-actions" style="justify-content:flex-end; align-items:flex-end;">
+        <button class="primary" onclick="cadastrarUsuario()">
+          <i class="ti ti-user-plus"></i> Cadastrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lista de usuários -->
+  <div class="card">
+    <h2><i class="ti ti-users"></i> Usuários cadastrados</h2>
+    <div class="user-list" id="user-list">
+      <div class="empty-users">
+        <i class="ti ti-user-off"></i>
+        Nenhum usuário ainda. Cadastre o primeiro acima.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal excluir -->
+<div class="modal-overlay" id="modal-excluir">
+  <div class="modal">
+    <h3>⚠️ Excluir usuário?</h3>
+    <p id="modal-excluir-txt">Este usuário não poderá mais acessar o sistema.</p>
+    <div class="modal-actions">
+      <button onclick="fecharModal()">Cancelar</button>
+      <button class="danger" onclick="confirmarExcluir()"><i class="ti ti-trash"></i> Excluir</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal alterar senha -->
+<div class="modal-overlay" id="modal-senha">
+  <div class="modal">
+    <h3>🔑 Alterar senha</h3>
+    <p id="modal-senha-txt"></p>
+    <div class="form-group" style="margin-bottom:10px">
+      <label>Nova senha</label>
+      <input type="password" id="nova-senha" placeholder="Mínimo 4 caracteres">
+    </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label>Confirmar nova senha</label>
+      <input type="password" id="nova-senha2" placeholder="Repita">
+    </div>
+    <div class="modal-actions">
+      <button onclick="fecharModal()">Cancelar</button>
+      <button class="primary" onclick="confirmarSenha()"><i class="ti ti-check"></i> Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── CORES DOS AVATARES ───────────────────────────────────────────────────────
+const AVATAR_COLORS = ['#185FA5','#3B6D11','#BA7517','#A32D2D','#534AB7','#0F6E56','#993C1D','#5B3FAF'];
+
+function avatarColor(email) {
+  let h = 0;
+  for (let i = 0; i < email.length; i++) h = (h * 31 + email.charCodeAt(i)) & 0xFFFFFFFF;
+  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
+}
+
+function initials(nome) {
+  const p = nome.trim().split(' ').filter(Boolean);
+  if (p.length === 1) return p[0][0].toUpperCase();
+  return (p[0][0] + p[p.length-1][0]).toUpperCase();
+}
+
+// ─── STORAGE ──────────────────────────────────────────────────────────────────
+function getUsuarios() {
+  try { return JSON.parse(localStorage.getItem('cp_usuarios') || '[]'); } catch { return []; }
+}
+
+function salvarUsuarios(us) {
+  localStorage.setItem('cp_usuarios', JSON.stringify(us));
+}
+
+// ─── TOAST ────────────────────────────────────────────────────────────────────
+function toast(msg, tipo = '') {
+  const el = document.getElementById('toast');
+  el.className = 'toast' + (tipo ? ` toast-${tipo}` : '');
+  el.innerHTML = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+// ─── CADASTRAR ────────────────────────────────────────────────────────────────
+function cadastrarUsuario() {
+  const nome   = document.getElementById('u-nome').value.trim();
+  const email  = document.getElementById('u-email').value.trim().toLowerCase();
+  const senha  = document.getElementById('u-senha').value;
+  const senha2 = document.getElementById('u-senha2').value;
+  const perfil = document.getElementById('u-perfil').value;
+
+  if (!nome)             { toast('<i class="ti ti-alert-circle"></i> Informe o nome', 'error'); return; }
+  if (!email || !email.includes('@')) { toast('<i class="ti ti-alert-circle"></i> E-mail inválido', 'error'); return; }
+  if (senha.length < 4)  { toast('<i class="ti ti-alert-circle"></i> Senha deve ter ao menos 4 caracteres', 'error'); return; }
+  if (senha !== senha2)  { toast('<i class="ti ti-alert-circle"></i> Senhas não conferem', 'error'); return; }
+
+  const us = getUsuarios();
+  if (us.find(u => u.email === email)) {
+    toast('<i class="ti ti-alert-circle"></i> Este e-mail já está cadastrado', 'error'); return;
+  }
+
+  us.push({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+    nome,
+    email,
+    senhaHash: btoa(senha), // ofuscação simples (não é criptografia real)
+    perfil,
+    criadoEm: new Date().toISOString()
+  });
+
+  salvarUsuarios(us);
+  document.getElementById('u-nome').value = '';
+  document.getElementById('u-email').value = '';
+  document.getElementById('u-senha').value = '';
+  document.getElementById('u-senha2').value = '';
+  renderUsuarios();
+  toast(`<i class="ti ti-check"></i> ${nome} cadastrado com sucesso!`, 'success');
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function renderUsuarios() {
+  const us = getUsuarios();
+  const container = document.getElementById('user-list');
+
+  if (us.length === 0) {
+    container.innerHTML = `<div class="empty-users"><i class="ti ti-user-off"></i>Nenhum usuário ainda. Cadastre o primeiro acima.</div>`;
+    return;
+  }
+
+  container.innerHTML = us.map(u => `
+    <div class="user-item">
+      <div class="user-avatar" style="background:${avatarColor(u.email)}">${initials(u.nome)}</div>
+      <div class="user-info">
+        <div class="user-name">
+          ${u.nome}
+          <span class="user-role ${u.perfil === 'admin' ? 'role-admin' : 'role-member'}">
+            ${u.perfil === 'admin' ? 'Admin' : 'Membro'}
+          </span>
+        </div>
+        <div class="user-email">${u.email}</div>
+      </div>
+      <div class="user-actions">
+        <button onclick="abrirAlterarSenha('${u.id}')" title="Alterar senha">
+          <i class="ti ti-key"></i>
+        </button>
+        <button class="danger" onclick="abrirExcluir('${u.id}')" title="Excluir">
+          <i class="ti ti-trash"></i>
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─── EXCLUIR ──────────────────────────────────────────────────────────────────
+let pendingDeleteId = null;
+function abrirExcluir(id) {
+  const us = getUsuarios();
+  const u = us.find(x => x.id === id);
+  if (!u) return;
+  pendingDeleteId = id;
+  document.getElementById('modal-excluir-txt').innerHTML = `Deseja excluir <strong>${u.nome}</strong> (${u.email})?<br>Este usuário não poderá mais acessar o sistema.`;
+  document.getElementById('modal-excluir').classList.add('open');
+}
+
+function confirmarExcluir() {
+  if (!pendingDeleteId) return;
+  const us = getUsuarios().filter(u => u.id !== pendingDeleteId);
+  salvarUsuarios(us);
+  pendingDeleteId = null;
+  fecharModal();
+  renderUsuarios();
+  toast('<i class="ti ti-trash"></i> Usuário excluído');
+}
+
+// ─── ALTERAR SENHA ────────────────────────────────────────────────────────────
+let pendingSenhaId = null;
+function abrirAlterarSenha(id) {
+  const us = getUsuarios();
+  const u = us.find(x => x.id === id);
+  if (!u) return;
+  pendingSenhaId = id;
+  document.getElementById('modal-senha-txt').innerHTML = `Alterando senha de <strong>${u.nome}</strong>`;
+  document.getElementById('nova-senha').value = '';
+  document.getElementById('nova-senha2').value = '';
+  document.getElementById('modal-senha').classList.add('open');
+}
+
+function confirmarSenha() {
+  const senha  = document.getElementById('nova-senha').value;
+  const senha2 = document.getElementById('nova-senha2').value;
+  if (senha.length < 4)   { toast('<i class="ti ti-alert-circle"></i> Senha deve ter ao menos 4 caracteres', 'error'); return; }
+  if (senha !== senha2)   { toast('<i class="ti ti-alert-circle"></i> Senhas não conferem', 'error'); return; }
+
+  const us = getUsuarios();
+  const idx = us.findIndex(x => x.id === pendingSenhaId);
+  if (idx < 0) return;
+  us[idx].senhaHash = btoa(senha);
+  salvarUsuarios(us);
+  pendingSenhaId = null;
+  fecharModal();
+  toast('<i class="ti ti-check"></i> Senha alterada!', 'success');
+}
+
+// ─── MODAL ────────────────────────────────────────────────────────────────────
+function fecharModal() {
+  document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open'));
+}
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) fecharModal(); });
+});
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+renderUsuarios();
+</script>
+</body>
+</html>
