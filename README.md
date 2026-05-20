@@ -1,1 +1,1352 @@
-# hawardpresenca
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle de Presença</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
+<style>
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --surface2: #f0ede8;
+    --border: rgba(0,0,0,0.09);
+    --border2: rgba(0,0,0,0.16);
+    --text: #1a1a18;
+    --text2: #5a5955;
+    --text3: #9a9890;
+    --green: #3B6D11;
+    --green-bg: #EAF3DE;
+    --red: #A32D2D;
+    --red-bg: #FCEBEB;
+    --amber: #BA7517;
+    --amber-bg: #FAEEDA;
+    --blue: #185FA5;
+    --blue-bg: #E6F1FB;
+    --purple: #5B3FAF;
+    --purple-bg: #EDEBFB;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1917;
+      --surface: #242320;
+      --surface2: #2e2d29;
+      --border: rgba(255,255,255,0.07);
+      --border2: rgba(255,255,255,0.14);
+      --text: #f0ede8;
+      --text2: #9a9890;
+      --text3: #5a5955;
+      --green: #97C459;
+      --green-bg: #173404;
+      --red: #F09595;
+      --red-bg: #501313;
+      --amber: #EF9F27;
+      --amber-bg: #412402;
+      --blue: #85B7EB;
+      --blue-bg: #042C53;
+      --purple: #B89EF0;
+      --purple-bg: #1E1040;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  /* ── LOGIN ───────────────────────────────────────────────────────────────── */
+  #login-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+  .login-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 36px 32px;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+  }
+  .login-logo {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 17px; font-weight: 700;
+    margin-bottom: 28px;
+  }
+  .login-logo i { font-size: 24px; color: var(--green); }
+  .login-box h2 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .login-box p { font-size: 13px; color: var(--text3); margin-bottom: 24px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+  .form-group label { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.05em; }
+  .form-group input {
+    font-family: inherit; font-size: 14px;
+    padding: 9px 12px; border: 1px solid var(--border2);
+    border-radius: var(--radius-sm); background: var(--surface);
+    color: var(--text); outline: none; transition: border-color 0.15s;
+    width: 100%;
+  }
+  .form-group input:focus { border-color: var(--blue); }
+  .login-error {
+    background: var(--red-bg); color: var(--red);
+    border-radius: var(--radius-sm); padding: 9px 14px;
+    font-size: 13px; margin-bottom: 14px; display: none;
+    align-items: center; gap: 6px;
+  }
+  .login-error.show { display: flex; }
+  .login-hint {
+    margin-top: 16px; text-align: center;
+    font-size: 12px; color: var(--text3);
+  }
+  .login-hint a { color: var(--blue); text-decoration: none; }
+  .login-hint a:hover { text-decoration: underline; }
+
+  /* ── TOPBAR ──────────────────────────────────────────────────────────────── */
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    gap: 12px;
+  }
+  .topbar-brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 15px; font-weight: 600; color: var(--text);
+    white-space: nowrap;
+  }
+  .topbar-brand i { font-size: 20px; color: var(--green); }
+  .topbar-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .topbar-user {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--text2);
+    padding: 4px 10px; background: var(--surface2);
+    border-radius: 20px; border: 1px solid var(--border);
+  }
+  .topbar-user .u-avatar {
+    width: 24px; height: 24px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; color: white;
+  }
+
+  /* ── BUTTONS ─────────────────────────────────────────────────────────────── */
+  button {
+    font-family: inherit; font-size: 13px; cursor: pointer;
+    border: 1px solid var(--border2); background: transparent;
+    color: var(--text); padding: 6px 13px; border-radius: var(--radius-sm);
+    display: inline-flex; align-items: center; gap: 6px;
+    transition: background 0.12s; white-space: nowrap;
+  }
+  button:hover { background: var(--surface2); }
+  button.primary { background: var(--text); color: var(--bg); border-color: transparent; }
+  button.primary:hover { opacity: 0.85; }
+  button.danger { color: var(--red); border-color: var(--red-bg); }
+  button.danger:hover { background: var(--red-bg); }
+  button.success { color: var(--green); border-color: var(--green-bg); }
+  button.success:hover { background: var(--green-bg); }
+  button.icon-btn {
+    padding: 4px 8px; border-radius: var(--radius-sm);
+    font-size: 12px; gap: 4px;
+  }
+  button.icon-btn i { font-size: 14px; }
+
+  /* ── MAIN ────────────────────────────────────────────────────────────────── */
+  .main { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+  .upload-zone {
+    border: 2px dashed var(--border2);
+    border-radius: var(--radius);
+    padding: 3rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: var(--surface);
+    margin-bottom: 2rem;
+    flex-direction: column;
+    align-items: center;
+  }
+  .upload-zone:hover, .upload-zone.drag { border-color: var(--green); background: var(--green-bg); }
+  .upload-zone i { font-size: 40px; color: var(--text3); display: block; margin-bottom: 12px; }
+  .upload-zone:hover i, .upload-zone.drag i { color: var(--green); }
+  .upload-zone h2 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .upload-zone p { font-size: 13px; color: var(--text2); }
+  .upload-zone small { font-size: 12px; color: var(--text3); display: block; margin-top: 4px; }
+  #file-input { display: none; }
+  #file-input-backup { display: none; }
+
+  .import-banner {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px 18px;
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 1.5rem; flex-wrap: wrap;
+  }
+  .import-banner i { font-size: 20px; color: var(--blue); flex-shrink: 0; }
+  .import-banner-text { flex: 1; min-width: 200px; }
+  .import-banner-text strong { font-size: 14px; font-weight: 600; }
+  .import-banner-text p { font-size: 12px; color: var(--text3); margin-top: 1px; }
+
+  /* ── STATS ───────────────────────────────────────────────────────────────── */
+  .stats-row {
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    gap: 10px; margin-bottom: 1.5rem;
+  }
+  @media (max-width: 700px) { .stats-row { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 460px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px 16px;
+  }
+  .stat-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+  .stat-value { font-size: 24px; font-weight: 700; }
+  .stat-value.green { color: var(--green); }
+  .stat-value.red { color: var(--red); }
+  .stat-value.amber { color: var(--amber); }
+  .stat-value.blue { color: var(--blue); }
+  .stat-value.purple { color: var(--purple); }
+
+  /* ── MÊS TABS ────────────────────────────────────────────────────────────── */
+  .mes-nav {
+    display: flex; gap: 4px; flex-wrap: wrap;
+    margin-bottom: 1.5rem; background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--radius); padding: 8px;
+  }
+  .mes-tab {
+    font-size: 13px; padding: 6px 16px; border-radius: 8px;
+    border: 1px solid transparent; background: transparent;
+    color: var(--text2); cursor: pointer; transition: all 0.12s; font-weight: 500;
+  }
+  .mes-tab:hover { background: var(--surface2); color: var(--text); border-color: var(--border2); }
+  .mes-tab.active { background: var(--text); color: var(--bg); border-color: transparent; }
+  .mes-tab .mes-count {
+    font-size: 10px; font-weight: 700; padding: 1px 5px;
+    border-radius: 8px; background: rgba(255,255,255,0.2); margin-left: 4px;
+  }
+  .mes-tab:not(.active) .mes-count { background: var(--border2); color: var(--text3); }
+
+  /* ── TOOLBAR ─────────────────────────────────────────────────────────────── */
+  .toolbar {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 1.5rem; flex-wrap: wrap;
+  }
+  .toolbar-label { font-size: 12px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; }
+  .tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+  .tab {
+    font-size: 13px; padding: 5px 14px; border-radius: 20px;
+    border: 1px solid var(--border2); background: transparent;
+    color: var(--text2); cursor: pointer; transition: all 0.12s;
+  }
+  .tab:hover { color: var(--text); background: var(--surface2); }
+  .tab.active { background: var(--text); color: var(--bg); border-color: transparent; }
+  .search-wrap { position: relative; flex: 1; min-width: 180px; max-width: 260px; }
+  .search-wrap i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 15px; color: var(--text3); pointer-events: none; }
+  .search-wrap input {
+    width: 100%; font-family: inherit; font-size: 13px;
+    padding: 6px 10px 6px 32px; border: 1px solid var(--border2);
+    border-radius: var(--radius-sm); background: var(--surface);
+    color: var(--text); outline: none;
+  }
+  .search-wrap input:focus { border-color: var(--blue); }
+
+  /* ── COURSE / DAY ────────────────────────────────────────────────────────── */
+  .course-section { margin-bottom: 2.5rem; }
+  .course-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 1rem; padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  }
+  .course-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  .course-icon i { font-size: 16px; }
+  .course-name { font-size: 16px; font-weight: 600; }
+  .course-count { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+  .day-group { margin-bottom: 1.25rem; }
+  .day-label {
+    font-size: 11px; color: var(--text3); text-transform: uppercase;
+    letter-spacing: 0.07em; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .day-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* ── STUDENT CARD ────────────────────────────────────────────────────────── */
+  .student-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 16px; margin-bottom: 8px;
+    transition: box-shadow 0.12s;
+  }
+  .student-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+  .student-top {
+    display: flex; align-items: center;
+    justify-content: space-between; margin-bottom: 10px; gap: 8px;
+  }
+  .student-left { display: flex; align-items: center; gap: 10px; }
+  .student-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--surface2); display: flex; align-items: center;
+    justify-content: center; font-size: 11px; font-weight: 700;
+    color: var(--text2); flex-shrink: 0;
+  }
+  .student-name { font-size: 14px; font-weight: 600; }
+  .student-meta { font-size: 12px; color: var(--text3); margin-top: 1px; }
+  .student-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .pct-badge { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+  .pct-green { background: var(--green-bg); color: var(--green); }
+  .pct-red { background: var(--red-bg); color: var(--red); }
+  .pct-amber { background: var(--amber-bg); color: var(--amber); }
+  .pct-none { background: var(--surface2); color: var(--text3); }
+
+  /* ── AULAS ───────────────────────────────────────────────────────────────── */
+  .aulas-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .aula-btn {
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    cursor: pointer; padding: 7px 10px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border); background: var(--surface2);
+    transition: all 0.12s; min-width: 64px; user-select: none;
+  }
+  .aula-btn:hover { border-color: var(--border2); transform: translateY(-1px); }
+  .aula-num { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.04em; }
+  .aula-date { font-size: 12px; font-weight: 600; color: var(--text2); }
+  .aula-circle {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 1.5px solid var(--border2); display: flex;
+    align-items: center; justify-content: center;
+    margin-top: 2px; font-size: 13px; transition: all 0.12s;
+  }
+  .aula-btn.presente { border-color: var(--green); background: var(--green-bg); }
+  .aula-btn.presente .aula-circle { background: var(--green); border-color: var(--green); color: white; }
+  .aula-btn.presente .aula-num, .aula-btn.presente .aula-date { color: var(--green); }
+  .aula-btn.faltou { border-color: var(--red); background: var(--red-bg); }
+  .aula-btn.faltou .aula-circle { background: var(--red); border-color: var(--red); color: white; }
+  .aula-btn.faltou .aula-num, .aula-btn.faltou .aula-date { color: var(--red); }
+  .progress-bar { height: 3px; background: var(--border); border-radius: 2px; margin-top: 10px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 2px; transition: width 0.3s; }
+
+  /* ── FEEDBACK ────────────────────────────────────────────────────────────── */
+  .feedback-section {
+    margin-top: 10px;
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+  }
+  .feedback-toggle {
+    font-size: 12px; color: var(--blue);
+    background: none; border: none; padding: 0;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 4px;
+    transition: opacity 0.12s;
+  }
+  .feedback-toggle:hover { opacity: 0.75; background: none; }
+  .feedback-toggle i { font-size: 14px; }
+  .feedback-count {
+    font-size: 11px; background: var(--blue-bg); color: var(--blue);
+    padding: 1px 6px; border-radius: 8px; font-weight: 700; margin-left: 4px;
+  }
+
+  .feedback-body { margin-top: 10px; }
+  .feedback-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+  .feedback-item {
+    background: var(--surface2); border-radius: var(--radius-sm);
+    border: 1px solid var(--border); padding: 8px 12px; font-size: 13px;
+  }
+  .feedback-item-header {
+    display: flex; align-items: center; gap: 6px; margin-bottom: 3px;
+  }
+  .feedback-author {
+    font-weight: 700; font-size: 12px;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .feedback-author .f-avatar {
+    width: 18px; height: 18px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 8px; font-weight: 700; color: white; flex-shrink: 0;
+  }
+  .feedback-date { font-size: 11px; color: var(--text3); margin-left: auto; }
+  .feedback-text { color: var(--text); line-height: 1.5; word-break: break-word; }
+  .feedback-item-actions { margin-left: auto; }
+  .feedback-del {
+    font-size: 11px; color: var(--text3); background: none; border: none;
+    padding: 2px 6px; cursor: pointer; border-radius: 4px;
+  }
+  .feedback-del:hover { color: var(--red); background: var(--red-bg); }
+
+  .feedback-input-row {
+    display: flex; gap: 6px; align-items: flex-end;
+  }
+  .feedback-input-wrap { flex: 1; }
+  .feedback-input-wrap textarea {
+    width: 100%; font-family: inherit; font-size: 13px;
+    padding: 8px 10px; border: 1px solid var(--border2);
+    border-radius: var(--radius-sm); background: var(--surface);
+    color: var(--text); outline: none; resize: none;
+    transition: border-color 0.15s; line-height: 1.4;
+    min-height: 38px;
+  }
+  .feedback-input-wrap textarea:focus { border-color: var(--blue); }
+  .feedback-input-wrap textarea::placeholder { color: var(--text3); }
+  .feedback-send {
+    padding: 8px 12px; background: var(--blue); color: white;
+    border: none; border-radius: var(--radius-sm); cursor: pointer;
+    font-size: 13px; display: flex; align-items: center; gap: 5px;
+    transition: opacity 0.12s; white-space: nowrap; height: 38px;
+    align-self: flex-end;
+  }
+  .feedback-send:hover { opacity: 0.85; background: var(--blue); }
+  .feedback-empty { font-size: 12px; color: var(--text3); font-style: italic; padding: 4px 0; }
+
+  /* ── MISC ────────────────────────────────────────────────────────────────── */
+  .empty { text-align: center; padding: 4rem 2rem; color: var(--text3); }
+  .empty i { font-size: 48px; display: block; margin-bottom: 12px; }
+  .empty h3 { font-size: 15px; color: var(--text2); margin-bottom: 6px; }
+  .legend {
+    display: flex; gap: 14px; font-size: 12px;
+    color: var(--text3); margin-bottom: 1rem; flex-wrap: wrap;
+  }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .curso-original-tag {
+    font-size: 10px; padding: 1px 7px; border-radius: 8px;
+    background: var(--amber-bg); color: var(--amber);
+    font-weight: 600; margin-left: 4px; vertical-align: middle;
+  }
+  .mes-badge {
+    font-size: 11px; padding: 2px 8px; border-radius: 8px;
+    background: var(--purple-bg); color: var(--purple);
+    font-weight: 600; margin-left: auto;
+  }
+  .planilha-origem {
+    font-size: 10px; padding: 1px 7px; border-radius: 8px;
+    background: var(--amber-bg); color: var(--amber);
+    font-weight: 600; margin-left: 4px; vertical-align: middle;
+  }
+  #app-content { display: none; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--text); color: var(--bg);
+    padding: 10px 18px; border-radius: var(--radius-sm);
+    font-size: 13px; z-index: 999;
+    opacity: 0; transform: translateY(8px);
+    transition: all 0.2s; display: flex; align-items: center; gap: 8px;
+    max-width: 340px;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.toast-success { background: var(--green); color: white; }
+  .toast.toast-error { background: var(--red); color: white; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    z-index: 200; display: flex; align-items: center; justify-content: center;
+    padding: 1rem; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--surface); border-radius: var(--radius); padding: 24px;
+    max-width: 440px; width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    transform: translateY(16px); transition: transform 0.2s;
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+  .modal p { font-size: 13px; color: var(--text2); margin-bottom: 16px; line-height: 1.6; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+  @media (max-width: 500px) {
+    .topbar { padding: 0 1rem; }
+    .main { padding: 1rem; }
+    .aula-btn { min-width: 56px; padding: 6px 6px; }
+    .topbar-brand span { display: none; }
+    .topbar-user .u-name { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN SCREEN ─────────────────────────────────────────────────────────── -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <i class="ti ti-calendar-check"></i>
+      Controle de Presença
+    </div>
+    <h2>Entrar</h2>
+    <p>Acesse com seu e-mail e senha</p>
+    <div class="login-error" id="login-error">
+      <i class="ti ti-alert-circle"></i>
+      <span id="login-error-msg">E-mail ou senha incorretos</span>
+    </div>
+    <div class="form-group">
+      <label>E-mail</label>
+      <input type="email" id="login-email" placeholder="seu@email.com" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label>Senha</label>
+      <input type="password" id="login-senha" placeholder="••••••••" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter') fazerLogin()">
+    </div>
+    <button class="primary" style="width:100%;justify-content:center;padding:10px;" onclick="fazerLogin()">
+      <i class="ti ti-login"></i> Entrar
+    </button>
+    <div class="login-hint">
+      Problemas de acesso? Peça ao administrador para<br>
+      <a href="cadastro.html">gerenciar os usuários aqui</a>
+    </div>
+  </div>
+</div>
+
+<!-- ── MAIN APP ──────────────────────────────────────────────────────────────── -->
+<div id="main-app" style="display:none">
+
+  <div class="topbar">
+    <span class="topbar-brand">
+      <i class="ti ti-calendar-check"></i>
+      <span>Controle de Presença</span>
+    </span>
+    <div class="topbar-actions">
+      <div class="topbar-user" id="topbar-user"></div>
+      <button class="success" onclick="document.getElementById('file-input').click()">
+        <i class="ti ti-upload"></i> Importar
+      </button>
+      <button onclick="exportarCSV()"><i class="ti ti-download"></i> CSV</button>
+      <button onclick="backupJSON()"><i class="ti ti-device-floppy"></i> Backup</button>
+      <button onclick="document.getElementById('file-input-backup').click()"><i class="ti ti-restore"></i> Restaurar</button>
+      <button id="btn-usuarios" onclick="window.location.href='cadastro.html'" style="display:none">
+        <i class="ti ti-users"></i> Usuários
+      </button>
+      <button class="danger" onclick="confirmarLimpar()"><i class="ti ti-trash"></i> Limpar</button>
+      <button onclick="fazerLogout()"><i class="ti ti-logout"></i> Sair</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <div class="upload-zone" id="drop-zone" style="display:flex">
+      <i class="ti ti-file-spreadsheet"></i>
+      <h2>Jogue a planilha aqui</h2>
+      <p>Arraste o arquivo ou clique para selecionar</p>
+      <small>Aceita .xlsx e .xls — colunas: Nome Completo Aluno, Curso, Data 1ª Aula, Horário</small>
+    </div>
+
+    <div id="app-content">
+      <div class="import-banner" id="import-banner">
+        <i class="ti ti-plus"></i>
+        <div class="import-banner-text">
+          <strong>Adicionar mais alunos</strong>
+          <p>Importe outra planilha — alunos já existentes serão ignorados automaticamente</p>
+        </div>
+        <button class="success" onclick="document.getElementById('file-input').click()">
+          <i class="ti ti-upload"></i> Importar planilha
+        </button>
+      </div>
+
+      <div class="stats-row" id="stats-row"></div>
+      <div class="mes-nav" id="mes-nav"></div>
+
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:var(--green)"></span>Presente</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--red)"></span>Faltou</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--border2)"></span>Pendente</span>
+        <span style="margin-left:auto;font-style:italic;font-size:12px">Clique em cada aula para registrar presença</span>
+      </div>
+
+      <div class="toolbar">
+        <span class="toolbar-label">Curso:</span>
+        <div class="tabs" id="tabs"></div>
+        <div class="search-wrap">
+          <i class="ti ti-search"></i>
+          <input type="text" id="busca" placeholder="Buscar aluno..." oninput="renderAlunos()">
+        </div>
+      </div>
+
+      <div id="alunos-container"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Inputs ocultos -->
+<input type="file" id="file-input" accept=".xlsx,.xls">
+<input type="file" id="file-input-backup" accept=".json">
+
+<div class="toast" id="toast"></div>
+
+<!-- Modal limpar -->
+<div class="modal-overlay" id="modal-limpar">
+  <div class="modal">
+    <h3>⚠️ Apagar todos os dados?</h3>
+    <p>Isso vai remover <strong id="modal-count"></strong> alunos e todas as presenças registradas.<br>
+    <strong>Esta ação não pode ser desfeita.</strong><br><br>
+    Dica: faça um <strong>Backup</strong> antes de limpar!</p>
+    <div class="modal-actions">
+      <button onclick="fecharModal()">Cancelar</button>
+      <button class="danger" onclick="limparDados()"><i class="ti ti-trash"></i> Sim, apagar tudo</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal feedback excluir -->
+<div class="modal-overlay" id="modal-fb-del">
+  <div class="modal">
+    <h3>Excluir feedback?</h3>
+    <p>Este comentário será removido permanentemente.</p>
+    <div class="modal-actions">
+      <button onclick="fecharModal()">Cancelar</button>
+      <button class="danger" onclick="confirmarDelFeedback()"><i class="ti ti-trash"></i> Excluir</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── CONSTANTES ───────────────────────────────────────────────────────────────
+const DIAS        = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+const DIAS_PLURAL = ['Domingos','Segundas','Terças','Quartas','Quintas','Sextas','Sábados'];
+const MESES_NOME  = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const AVATAR_COLORS = ['#185FA5','#3B6D11','#BA7517','#A32D2D','#534AB7','#0F6E56','#993C1D','#5B3FAF'];
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let alunos      = [];
+let presencas   = {};
+let feedbacks   = {}; // { alunoId: [{id, autorNome, autorEmail, texto, criadoEm}] }
+let importacoes = [];
+let cursoAtivo  = 'todos';
+let mesAtivo    = 'todos';
+let usuarioLogado = null; // { id, nome, email, perfil }
+
+// ─── UTILS ────────────────────────────────────────────────────────────────────
+function avatarColor(email) {
+  let h = 0;
+  for (let i = 0; i < email.length; i++) h = (h * 31 + email.charCodeAt(i)) & 0xFFFFFFFF;
+  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
+}
+
+function initials(nome) {
+  const p = nome.trim().split(' ').filter(Boolean);
+  if (p.length === 1) return p[0][0].toUpperCase();
+  return (p[0][0] + p[p.length-1][0]).toUpperCase();
+}
+
+function toast(msg, tipo = '') {
+  const el = document.getElementById('toast');
+  el.className = 'toast' + (tipo ? ` toast-${tipo}` : '');
+  el.innerHTML = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+function parseDate(v) {
+  if (!v) return null;
+  if (v instanceof Date) return isNaN(v) ? null : v;
+  if (typeof v === 'number') {
+    const d = new Date(Math.round((v - 25569) * 86400 * 1000));
+    d.setMinutes(d.getMinutes() + d.getTimezoneOffset());
+    return d;
+  }
+  const s = String(v).trim();
+  const parts = s.split(/[\/\-\.]/);
+  if (parts.length === 3) {
+    const [a, b, c] = parts.map(Number);
+    if (parts[0].length === 4) return new Date(a, b-1, c);
+    return new Date(c, a-1, b);
+  }
+  const d = new Date(s);
+  return isNaN(d) ? null : d;
+}
+
+function getAulas(dataInicio) {
+  const datas = [];
+  const d = new Date(dataInicio);
+  for (let i = 0; i < 4; i++) {
+    datas.push(new Date(d));
+    d.setDate(d.getDate() + 7);
+  }
+  return datas;
+}
+
+function fmtDate(d)   { return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`; }
+function mesAnoKey(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
+function mesAnoLabel(key) {
+  const [ano, mes] = key.split('-');
+  return `${MESES_NOME[parseInt(mes)-1]} ${ano}`;
+}
+
+function fmtDatetime(iso) {
+  const d = new Date(iso);
+  return d.toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+}
+
+// ─── CLASSIFICAÇÃO ────────────────────────────────────────────────────────────
+function classificarCurso(curso) {
+  const lower = curso.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const temIngles   = lower.includes('ingles');
+  const temEspanhol = lower.includes('espanhol');
+  const soIngles    = /^(ingles|haward|ingles\s*haward)$/.test(lower.trim().replace(/\s+/g,' '));
+  const isMisto     = temIngles && !soIngles;
+  const grupos = [];
+  if (temIngles)                   grupos.push('ingles');
+  if (temEspanhol)                 grupos.push('espanhol');
+  if (!temIngles && !temEspanhol)  grupos.push('dinamica');
+  if (isMisto)                     grupos.push('dinamica');
+  return grupos.length > 0 ? grupos : ['dinamica'];
+}
+
+const TABS_FIXAS = [
+  { key: 'todos',    label: 'Todos' },
+  { key: 'ingles',   label: 'Inglês' },
+  { key: 'espanhol', label: 'Espanhol' },
+  { key: 'dinamica', label: 'Dinâmica' },
+];
+
+// ─── STORAGE ──────────────────────────────────────────────────────────────────
+function loadStorage() {
+  try {
+    const a = localStorage.getItem('cp_alunos');
+    const p = localStorage.getItem('cp_presencas');
+    const f = localStorage.getItem('cp_feedbacks');
+    const i = localStorage.getItem('cp_importacoes');
+    if (a) alunos      = JSON.parse(a);
+    if (p) presencas   = JSON.parse(p);
+    if (f) feedbacks   = JSON.parse(f);
+    if (i) importacoes = JSON.parse(i);
+    alunos.forEach(a => {
+      if (!a.mesAno) { const d = new Date(a.dataInicio); a.mesAno = mesAnoKey(d); }
+    });
+  } catch(e) {}
+}
+
+function saveStorage() {
+  try {
+    localStorage.setItem('cp_alunos',      JSON.stringify(alunos));
+    localStorage.setItem('cp_presencas',   JSON.stringify(presencas));
+    localStorage.setItem('cp_feedbacks',   JSON.stringify(feedbacks));
+    localStorage.setItem('cp_importacoes', JSON.stringify(importacoes));
+  } catch(e) {
+    toast('<i class="ti ti-alert-circle"></i> Erro ao salvar', 'error');
+  }
+}
+
+function getUsuarios() {
+  try { return JSON.parse(localStorage.getItem('cp_usuarios') || '[]'); } catch { return []; }
+}
+
+// ─── LOGIN ────────────────────────────────────────────────────────────────────
+function fazerLogin() {
+  const email = document.getElementById('login-email').value.trim().toLowerCase();
+  const senha = document.getElementById('login-senha').value;
+  const errEl = document.getElementById('login-error');
+  errEl.classList.remove('show');
+
+  const us = getUsuarios();
+  if (us.length === 0) {
+    document.getElementById('login-error-msg').textContent = 'Nenhum usuário cadastrado. Crie um em "cadastro.html" primeiro.';
+    errEl.classList.add('show'); return;
+  }
+
+  const user = us.find(u => u.email === email && u.senhaHash === btoa(senha));
+  if (!user) {
+    document.getElementById('login-error-msg').textContent = 'E-mail ou senha incorretos.';
+    errEl.classList.add('show'); return;
+  }
+
+  usuarioLogado = { id: user.id, nome: user.nome, email: user.email, perfil: user.perfil };
+  sessionStorage.setItem('cp_session', JSON.stringify(usuarioLogado));
+
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('main-app').style.display = 'block';
+  iniciarApp();
+}
+
+function fazerLogout() {
+  sessionStorage.removeItem('cp_session');
+  usuarioLogado = null;
+  document.getElementById('main-app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-senha').value = '';
+}
+
+function verificarSessao() {
+  try {
+    const s = sessionStorage.getItem('cp_session');
+    if (s) {
+      usuarioLogado = JSON.parse(s);
+      // Verifica se o usuário ainda existe
+      const us = getUsuarios();
+      const ainda = us.find(u => u.id === usuarioLogado.id);
+      if (ainda) return true;
+    }
+  } catch {}
+  return false;
+}
+
+function iniciarApp() {
+  const cor = avatarColor(usuarioLogado.email);
+  document.getElementById('topbar-user').innerHTML = `
+    <div class="u-avatar" style="background:${cor}">${initials(usuarioLogado.nome)}</div>
+    <span class="u-name">${usuarioLogado.nome.split(' ')[0]}</span>
+  `;
+  if (usuarioLogado.perfil === 'admin') {
+    document.getElementById('btn-usuarios').style.display = 'inline-flex';
+  }
+  render();
+}
+
+// ─── IMPORTAÇÃO ───────────────────────────────────────────────────────────────
+function processSheet(data, nomeArquivo) {
+  if (!data || data.length < 2) { toast('<i class="ti ti-alert-circle"></i> Planilha vazia ou inválida', 'error'); return; }
+  const headers = data[0].map(h => String(h || '').trim().toLowerCase());
+  const findCol = (terms) => {
+    for (const t of terms) { const i = headers.findIndex(h => h.includes(t)); if (i >= 0) return i; }
+    return -1;
+  };
+  const iNome  = findCol(['nome completo','nome aluno','nome do aluno','aluno','nome']);
+  const iCurso = findCol(['curso','modalidade','turma']);
+  const iData  = findCol(['data 1ª','data 1a','data prim','data iní','data ini','data']);
+  const iHora  = findCol(['horário','horario','hora','turno']);
+  if (iNome  < 0) { toast('<i class="ti ti-alert-circle"></i> Coluna "Nome" não encontrada', 'error'); return; }
+  if (iCurso < 0) { toast('<i class="ti ti-alert-circle"></i> Coluna "Curso" não encontrada', 'error'); return; }
+  if (iData  < 0) { toast('<i class="ti ti-alert-circle"></i> Coluna "Data 1ª Aula" não encontrada', 'error'); return; }
+
+  let adicionados = 0, ignorados = 0;
+  const existIds = new Set(alunos.map(a => a.id));
+  for (let i = 1; i < data.length; i++) {
+    const row  = data[i];
+    const nome = String(row[iNome]  || '').trim();
+    const curso= String(row[iCurso] || '').trim();
+    const hora = iHora >= 0 ? String(row[iHora] || '').trim() : '';
+    if (!nome || !curso) continue;
+    const dataInicio = parseDate(row[iData]);
+    if (!dataInicio) continue;
+    const id = btoa(encodeURIComponent(`${nome}|${curso}|${dataInicio.toDateString()}`)).replace(/=/g,'');
+    if (!existIds.has(id)) {
+      alunos.push({ id, nome, curso, dataInicio: dataInicio.toISOString(), diaSemana: dataInicio.getDay(), horario: hora, mesAno: mesAnoKey(dataInicio) });
+      existIds.add(id); adicionados++;
+    } else { ignorados++; }
+  }
+  importacoes.push({ arquivo: nomeArquivo || 'planilha.xlsx', dataImport: new Date().toISOString(), novos: adicionados, ignorados });
+  saveStorage();
+  render();
+  if (adicionados > 0) {
+    toast(`<i class="ti ti-check"></i> ${adicionados} aluno${adicionados>1?'s':''} adicionado${adicionados>1?'s':''}${ignorados>0?` · ${ignorados} duplicado${ignorados>1?'s':''} ignorado${ignorados>1?'s':''}` : ''}`, 'success');
+  } else {
+    toast(`<i class="ti ti-info-circle"></i> Nenhum aluno novo — ${ignorados} já estavam cadastrados`);
+  }
+}
+
+// ─── PRESENÇA ─────────────────────────────────────────────────────────────────
+function togglePresenca(alunoId, idx) {
+  const key = `${alunoId}__${idx}`;
+  const cur = presencas[key];
+  if (!cur)                presencas[key] = 'presente';
+  else if (cur==='presente') presencas[key] = 'faltou';
+  else                     delete presencas[key];
+  saveStorage();
+  renderAlunos();
+  renderStats();
+}
+
+// ─── FEEDBACK ─────────────────────────────────────────────────────────────────
+function toggleFeedback(alunoId) {
+  const el = document.getElementById(`fb-body-${alunoId}`);
+  if (!el) return;
+  const visible = el.style.display !== 'none';
+  el.style.display = visible ? 'none' : 'block';
+}
+
+function enviarFeedback(alunoId) {
+  const ta = document.getElementById(`fb-input-${alunoId}`);
+  if (!ta) return;
+  const texto = ta.value.trim();
+  if (!texto) { toast('<i class="ti ti-alert-circle"></i> Digite um comentário', 'error'); return; }
+
+  if (!feedbacks[alunoId]) feedbacks[alunoId] = [];
+  feedbacks[alunoId].push({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+    autorNome: usuarioLogado.nome,
+    autorEmail: usuarioLogado.email,
+    texto,
+    criadoEm: new Date().toISOString()
+  });
+  saveStorage();
+
+  // Re-render só a lista de feedbacks deste aluno
+  renderFeedbackLista(alunoId);
+  ta.value = '';
+  toast('<i class="ti ti-check"></i> Feedback registrado!', 'success');
+}
+
+function renderFeedbackLista(alunoId) {
+  const listEl = document.getElementById(`fb-list-${alunoId}`);
+  const countEl = document.getElementById(`fb-count-${alunoId}`);
+  if (!listEl) return;
+
+  const lista = feedbacks[alunoId] || [];
+  if (countEl) {
+    countEl.textContent = lista.length;
+    countEl.style.display = lista.length > 0 ? 'inline' : 'none';
+  }
+
+  if (lista.length === 0) {
+    listEl.innerHTML = '<div class="feedback-empty">Nenhum comentário ainda.</div>';
+    return;
+  }
+
+  const podeExcluirTudo = usuarioLogado.perfil === 'admin';
+  listEl.innerHTML = lista.map(f => {
+    const cor = avatarColor(f.autorEmail);
+    const podeExcluir = podeExcluirTudo || f.autorEmail === usuarioLogado.email;
+    return `
+      <div class="feedback-item" id="fb-item-${f.id}">
+        <div class="feedback-item-header">
+          <div class="feedback-author">
+            <div class="f-avatar" style="background:${cor}">${initials(f.autorNome)}</div>
+            ${f.autorNome}
+          </div>
+          <span class="feedback-date">${fmtDatetime(f.criadoEm)}</span>
+          ${podeExcluir ? `<button class="feedback-del" onclick="abrirDelFeedback('${alunoId}','${f.id}')" title="Excluir comentário"><i class="ti ti-x"></i></button>` : ''}
+        </div>
+        <div class="feedback-text">${escHtml(f.texto)}</div>
+      </div>`;
+  }).join('');
+}
+
+function escHtml(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+let pendingFbDel = null;
+function abrirDelFeedback(alunoId, fbId) {
+  pendingFbDel = { alunoId, fbId };
+  document.getElementById('modal-fb-del').classList.add('open');
+}
+function confirmarDelFeedback() {
+  if (!pendingFbDel) return;
+  const { alunoId, fbId } = pendingFbDel;
+  if (feedbacks[alunoId]) {
+    feedbacks[alunoId] = feedbacks[alunoId].filter(f => f.id !== fbId);
+    if (feedbacks[alunoId].length === 0) delete feedbacks[alunoId];
+  }
+  saveStorage();
+  pendingFbDel = null;
+  fecharModal();
+  renderFeedbackLista(alunoId);
+  toast('<i class="ti ti-trash"></i> Comentário removido');
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function renderStats() {
+  const base = mesAtivo === 'todos' ? alunos : alunos.filter(a => a.mesAno === mesAtivo);
+  let pres=0, falta=0;
+  base.forEach(a => {
+    for (let i=0;i<4;i++) {
+      const v = presencas[`${a.id}__${i}`];
+      if (v==='presente') pres++;
+      else if (v==='faltou') falta++;
+    }
+  });
+  const pct = (pres+falta)>0 ? Math.round((pres/(pres+falta))*100) : 0;
+  const meses = [...new Set(alunos.map(a=>a.mesAno))].length;
+  document.getElementById('stats-row').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Alunos${mesAtivo!=='todos'?'<br>(mês)':''}</div><div class="stat-value">${base.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Presenças</div><div class="stat-value green">${pres}</div></div>
+    <div class="stat-card"><div class="stat-label">Faltas</div><div class="stat-value red">${falta}</div></div>
+    <div class="stat-card"><div class="stat-label">Taxa presença</div><div class="stat-value amber">${pct}%</div></div>
+    <div class="stat-card"><div class="stat-label">Meses ativos</div><div class="stat-value purple">${meses}</div></div>
+  `;
+}
+
+function getMesesDisponiveis() {
+  return [...new Set(alunos.map(a => a.mesAno))].sort();
+}
+
+function renderMesNav() {
+  const meses = getMesesDisponiveis();
+  if (meses.length === 0) { document.getElementById('mes-nav').innerHTML = ''; return; }
+  let html = `<button class="mes-tab ${mesAtivo==='todos'?'active':''}" onclick="setMes('todos')">
+    Todos <span class="mes-count">${alunos.length}</span></button>`;
+  meses.forEach(m => {
+    const count = alunos.filter(a => a.mesAno === m).length;
+    html += `<button class="mes-tab ${mesAtivo===m?'active':''}" onclick="setMes('${m}')">
+      ${mesAnoLabel(m)} <span class="mes-count">${count}</span></button>`;
+  });
+  document.getElementById('mes-nav').innerHTML = html;
+}
+
+function setMes(m) {
+  mesAtivo = m;
+  renderMesNav(); renderTabs(); renderAlunos(); renderStats();
+}
+
+function renderTabs() {
+  const base = mesAtivo === 'todos' ? alunos : alunos.filter(a => a.mesAno === mesAtivo);
+  const gruposComAlunos = new Set(['todos']);
+  base.forEach(a => classificarCurso(a.curso).forEach(g => gruposComAlunos.add(g)));
+  document.getElementById('tabs').innerHTML = TABS_FIXAS
+    .filter(t => gruposComAlunos.has(t.key))
+    .map(t => `<button class="tab ${t.key===cursoAtivo?'active':''}" onclick="setTab('${t.key}')">${t.label}</button>`)
+    .join('');
+}
+
+function setTab(c) { cursoAtivo = c; renderTabs(); renderAlunos(); }
+
+function getAlunosFiltrados() {
+  const busca = (document.getElementById('busca')?.value || '').toLowerCase();
+  let filtrados = mesAtivo === 'todos' ? alunos : alunos.filter(a => a.mesAno === mesAtivo);
+  if (cursoAtivo !== 'todos') filtrados = filtrados.filter(a => classificarCurso(a.curso).includes(cursoAtivo));
+  if (busca) filtrados = filtrados.filter(a => a.nome.toLowerCase().includes(busca));
+  return filtrados;
+}
+
+function renderAlunos() {
+  const filtrados = getAlunosFiltrados();
+  if (filtrados.length === 0) {
+    document.getElementById('alunos-container').innerHTML = `
+      <div class="empty">
+        <i class="ti ti-mood-empty"></i>
+        <h3>${alunos.length===0?'Nenhum aluno cadastrado':'Nenhum resultado encontrado'}</h3>
+        <p style="font-size:13px">${alunos.length===0?'Importe uma planilha para começar':'Tente outra busca ou filtro'}</p>
+      </div>`;
+    return;
+  }
+
+  const porGrupo = {};
+  filtrados.forEach(a => {
+    let secoes;
+    if (cursoAtivo === 'todos') {
+      secoes = classificarCurso(a.curso).map(g => g==='ingles'?'Inglês':g==='espanhol'?'Espanhol':'Dinâmica');
+    } else { secoes = [a.curso]; }
+    secoes.forEach(secao => {
+      if (!porGrupo[secao]) porGrupo[secao] = {};
+      if (!porGrupo[secao][a.diaSemana]) porGrupo[secao][a.diaSemana] = [];
+      const jaExiste = porGrupo[secao][a.diaSemana].find(x => x.id === a.id);
+      if (!jaExiste) porGrupo[secao][a.diaSemana].push(a);
+    });
+  });
+
+  const ordemFixa = ['Inglês','Espanhol','Dinâmica'];
+  const secoesOrdenadas = Object.keys(porGrupo).sort((a,b) => {
+    const ia=ordemFixa.indexOf(a), ib=ordemFixa.indexOf(b);
+    if (ia>=0&&ib>=0) return ia-ib;
+    if (ia>=0) return -1; if (ib>=0) return 1;
+    return a.localeCompare(b);
+  });
+
+  const colors = ['#185FA5','#3B6D11','#BA7517','#993C1D','#534AB7','#0F6E56'];
+  let cIdx = 0, html = '';
+
+  secoesOrdenadas.forEach(secao => {
+    const cor = colors[cIdx++ % colors.length];
+    const total = Object.values(porGrupo[secao]).flat().length;
+    html += `<div class="course-section">
+      <div class="course-header">
+        <div class="course-icon" style="background:${cor}22"><i class="ti ti-school" style="color:${cor}"></i></div>
+        <span class="course-name">${secao}</span>
+        <span class="course-count" style="background:${cor}18;color:${cor}">${total} aluno${total>1?'s':''}</span>
+        ${mesAtivo!=='todos'?`<span class="mes-badge">${mesAnoLabel(mesAtivo)}</span>`:''}
+      </div>`;
+
+    Object.keys(porGrupo[secao]).sort().forEach(diaNum => {
+      const lista = porGrupo[secao][diaNum];
+      html += `<div class="day-group"><div class="day-label"><i class="ti ti-calendar-week" style="font-size:13px"></i> ${DIAS_PLURAL[diaNum]}</div>`;
+
+      lista.sort((a,b) => a.nome.localeCompare(b.nome)).forEach(aluno => {
+        const datas = getAulas(aluno.dataInicio);
+        let pres=0, falta=0;
+        for (let i=0;i<4;i++) {
+          const v = presencas[`${aluno.id}__${i}`];
+          if (v==='presente') pres++;
+          if (v==='faltou') falta++;
+        }
+        const pct = (pres+falta)>0 ? Math.round((pres/4)*100) : null;
+        const pctClass = pct===null?'pct-none':pct>=75?'pct-green':pct>=50?'pct-amber':'pct-red';
+        const pctTxt   = pct===null?'Pendente':`${pres}/4 aulas`;
+        const barCor   = pct===null?'var(--border2)':pct>=75?'var(--green)':pct>=50?'var(--amber)':'var(--red)';
+        const isGrupoConsolidado = ['Inglês','Espanhol','Dinâmica'].includes(secao);
+        const cursoTag = isGrupoConsolidado ? `<span class="curso-original-tag">${aluno.curso}</span>` : '';
+        const mesTag   = mesAtivo==='todos' ? `<span class="planilha-origem">${mesAnoLabel(aluno.mesAno)}</span>` : '';
+
+        const fbs = feedbacks[aluno.id] || [];
+        const fbCount = fbs.length;
+
+        const escId = CSS.escape ? CSS.escape(aluno.id) : aluno.id;
+        const safeId = aluno.id.replace(/[^a-zA-Z0-9_-]/g, '_');
+
+        html += `<div class="student-card">
+          <div class="student-top">
+            <div class="student-left">
+              <div class="student-avatar">${initials(aluno.nome)}</div>
+              <div>
+                <div class="student-name">${aluno.nome}${cursoTag}${mesTag}</div>
+                <div class="student-meta">${aluno.horario || DIAS[aluno.diaSemana]}</div>
+              </div>
+            </div>
+            <div class="student-right">
+              <span class="pct-badge ${pctClass}">${pctTxt}</span>
+            </div>
+          </div>
+          <div class="aulas-row">`;
+
+        datas.forEach((d, i) => {
+          const v   = presencas[`${aluno.id}__${i}`];
+          const cls = v==='presente'?'presente':v==='faltou'?'faltou':'';
+          const icon= v==='presente'?'✓':v==='faltou'?'✗':'';
+          const escAlunoId = aluno.id.replace(/'/g,"\\'");
+          html += `<div class="aula-btn ${cls}" onclick="togglePresenca('${escAlunoId}',${i})" title="Clique para registrar">
+            <span class="aula-num">Aula ${i+1}</span>
+            <span class="aula-date">${fmtDate(d)}</span>
+            <span class="aula-circle">${icon}</span>
+          </div>`;
+        });
+
+        const barW = pct!==null?pct:0;
+        html += `</div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${barW}%;background:${barCor}"></div></div>
+
+          <!-- FEEDBACK SECTION -->
+          <div class="feedback-section">
+            <button class="feedback-toggle" onclick="toggleFeedback('${safeId}')">
+              <i class="ti ti-message-circle"></i>
+              Feedback de contato
+              <span class="feedback-count" id="fb-count-${safeId}" style="display:${fbCount>0?'inline':'none'}">${fbCount}</span>
+            </button>
+            <div class="feedback-body" id="fb-body-${safeId}" style="display:none">
+              <div class="feedback-list" id="fb-list-${safeId}"></div>
+              <div class="feedback-input-row">
+                <div class="feedback-input-wrap">
+                  <textarea id="fb-input-${safeId}" placeholder="Escreva um feedback de contato..." rows="2"
+                    onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();enviarFeedback('${safeId}')}"></textarea>
+                </div>
+                <button class="feedback-send" onclick="enviarFeedback('${safeId}')">
+                  <i class="ti ti-send"></i> Enviar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      });
+      html += '</div>';
+    });
+    html += '</div>';
+  });
+
+  document.getElementById('alunos-container').innerHTML = html;
+
+  // Renderiza listas de feedback após inserir o HTML
+  filtrados.forEach(aluno => {
+    const safeId = aluno.id.replace(/[^a-zA-Z0-9_-]/g, '_');
+    // Mapeia safeId -> alunoId real para feedbacks
+    if (!window._fbIdMap) window._fbIdMap = {};
+    window._fbIdMap[safeId] = aluno.id;
+    renderFeedbackLista(safeId);
+  });
+}
+
+// Sobrescreve renderFeedbackLista para suportar safeId -> id real
+const _renderFbOriginal = renderFeedbackLista;
+function renderFeedbackLista(safeId) {
+  // Tenta encontrar o id real
+  const alunoId = (window._fbIdMap && window._fbIdMap[safeId]) ? window._fbIdMap[safeId] : safeId;
+
+  const listEl = document.getElementById(`fb-list-${safeId}`);
+  const countEl = document.getElementById(`fb-count-${safeId}`);
+  if (!listEl) return;
+
+  const lista = feedbacks[alunoId] || [];
+  if (countEl) {
+    countEl.textContent = lista.length;
+    countEl.style.display = lista.length > 0 ? 'inline' : 'none';
+  }
+
+  if (lista.length === 0) {
+    listEl.innerHTML = '<div class="feedback-empty">Nenhum comentário ainda.</div>';
+    return;
+  }
+
+  const podeExcluirTudo = usuarioLogado && usuarioLogado.perfil === 'admin';
+  listEl.innerHTML = lista.map(f => {
+    const cor = avatarColor(f.autorEmail);
+    const podeExcluir = podeExcluirTudo || (usuarioLogado && f.autorEmail === usuarioLogado.email);
+    return `
+      <div class="feedback-item" id="fb-item-${f.id}">
+        <div class="feedback-item-header">
+          <div class="feedback-author">
+            <div class="f-avatar" style="background:${cor}">${initials(f.autorNome)}</div>
+            ${escHtml(f.autorNome)}
+          </div>
+          <span class="feedback-date">${fmtDatetime(f.criadoEm)}</span>
+          ${podeExcluir ? `<button class="feedback-del" onclick="abrirDelFeedback('${alunoId}','${f.id}')" title="Excluir comentário"><i class="ti ti-x"></i></button>` : ''}
+        </div>
+        <div class="feedback-text">${escHtml(f.texto)}</div>
+      </div>`;
+  }).join('');
+}
+
+// Sobrescreve enviarFeedback para usar id real
+const _enviarFbOriginal = enviarFeedback;
+function enviarFeedback(safeId) {
+  const alunoId = (window._fbIdMap && window._fbIdMap[safeId]) ? window._fbIdMap[safeId] : safeId;
+  const ta = document.getElementById(`fb-input-${safeId}`);
+  if (!ta) return;
+  const texto = ta.value.trim();
+  if (!texto) { toast('<i class="ti ti-alert-circle"></i> Digite um comentário', 'error'); return; }
+
+  if (!feedbacks[alunoId]) feedbacks[alunoId] = [];
+  feedbacks[alunoId].push({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+    autorNome: usuarioLogado.nome,
+    autorEmail: usuarioLogado.email,
+    texto,
+    criadoEm: new Date().toISOString()
+  });
+  saveStorage();
+  renderFeedbackLista(safeId);
+  ta.value = '';
+  toast('<i class="ti ti-check"></i> Feedback registrado!', 'success');
+}
+
+function render() {
+  const has = alunos.length > 0;
+  document.getElementById('app-content').style.display = has ? 'block' : 'none';
+  document.getElementById('drop-zone').style.display   = has ? 'none' : 'flex';
+  if (has) { renderStats(); renderMesNav(); renderTabs(); renderAlunos(); }
+}
+
+// ─── EXPORTAR / BACKUP ────────────────────────────────────────────────────────
+function exportarCSV() {
+  if (alunos.length === 0) { toast('<i class="ti ti-info-circle"></i> Nenhum dado para exportar'); return; }
+  const base = mesAtivo === 'todos' ? alunos : alunos.filter(a => a.mesAno === mesAtivo);
+  const rows = [['Nome','Curso','Grupo','Mês Início','Dia da Semana','Horário','Início','Aula 1','Aula 2','Aula 3','Aula 4','Presenças','Faltas','Total Feedbacks']];
+  base.forEach(a => {
+    const datas = getAulas(a.dataInicio);
+    const aulas = Array.from({length:4},(_,i) => presencas[`${a.id}__${i}`]||'pendente');
+    const pres  = aulas.filter(v=>v==='presente').length;
+    const falta = aulas.filter(v=>v==='faltou').length;
+    const grupos = classificarCurso(a.curso).join('+');
+    const fbCount = (feedbacks[a.id]||[]).length;
+    rows.push([a.nome,a.curso,grupos,mesAnoLabel(a.mesAno),DIAS[a.diaSemana],a.horario,
+      fmtDate(new Date(a.dataInicio)), ...aulas.map((v,i)=>`${fmtDate(datas[i])}: ${v}`),pres,falta,fbCount]);
+  });
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const blob = new Blob(['\uFEFF'+csv], { type:'text/csv;charset=utf-8' });
+  baixarBlob(blob, `presencas_${mesAtivo}_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.csv`);
+  toast('<i class="ti ti-check"></i> CSV exportado!', 'success');
+}
+
+function backupJSON() {
+  if (alunos.length === 0) { toast('<i class="ti ti-info-circle"></i> Nenhum dado para exportar'); return; }
+  const payload = { versao: 3, exportadoEm: new Date().toISOString(), alunos, presencas, feedbacks, importacoes };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type:'application/json' });
+  baixarBlob(blob, `backup_presencas_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.json`);
+  toast('<i class="ti ti-device-floppy"></i> Backup salvo!', 'success');
+}
+
+function restaurarBackup(file) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const payload = JSON.parse(ev.target.result);
+      if (!payload.alunos || !Array.isArray(payload.alunos)) throw new Error('Formato inválido');
+      alunos      = payload.alunos;
+      presencas   = payload.presencas || {};
+      feedbacks   = payload.feedbacks || {};
+      importacoes = payload.importacoes || [];
+      alunos.forEach(a => { if (!a.mesAno) { const d=new Date(a.dataInicio); a.mesAno=mesAnoKey(d); } });
+      saveStorage();
+      mesAtivo = 'todos'; cursoAtivo = 'todos';
+      render();
+      toast(`<i class="ti ti-check"></i> Backup restaurado — ${alunos.length} alunos`, 'success');
+    } catch(e) {
+      toast('<i class="ti ti-alert-circle"></i> Arquivo de backup inválido', 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function baixarBlob(blob, nome) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = nome; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─── LIMPAR ───────────────────────────────────────────────────────────────────
+function confirmarLimpar() {
+  if (alunos.length === 0) { toast('<i class="ti ti-info-circle"></i> Nada para limpar'); return; }
+  document.getElementById('modal-count').textContent = alunos.length;
+  document.getElementById('modal-limpar').classList.add('open');
+}
+
+function fecharModal() {
+  document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open'));
+}
+
+function limparDados() {
+  fecharModal();
+  alunos=[]; presencas={}; feedbacks={}; importacoes=[];
+  try {
+    localStorage.removeItem('cp_alunos');
+    localStorage.removeItem('cp_presencas');
+    localStorage.removeItem('cp_feedbacks');
+    localStorage.removeItem('cp_importacoes');
+  } catch(e) {}
+  document.getElementById('busca').value='';
+  cursoAtivo='todos'; mesAtivo='todos';
+  render();
+  toast('<i class="ti ti-trash"></i> Dados apagados');
+}
+
+// ─── UPLOAD ───────────────────────────────────────────────────────────────────
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+const fileInputBackup = document.getElementById('file-input-backup');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file) readFile(file);
+});
+
+fileInput.addEventListener('change', e => { if (e.target.files[0]) readFile(e.target.files[0]); e.target.value=''; });
+fileInputBackup.addEventListener('change', e => { if (e.target.files[0]) restaurarBackup(e.target.files[0]); e.target.value=''; });
+
+function readFile(file) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const wb   = XLSX.read(ev.target.result, { type:'array', cellDates:false });
+      const ws   = wb.Sheets[wb.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(ws, { header:1, raw:true });
+      processSheet(data, file.name);
+    } catch(e) {
+      toast('<i class="ti ti-alert-circle"></i> Erro ao ler o arquivo', 'error');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) fecharModal(); });
+});
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+loadStorage();
+
+if (verificarSessao()) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('main-app').style.display = 'block';
+  iniciarApp();
+}
+</script>
+</body>
+</html>
